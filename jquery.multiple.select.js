@@ -9,10 +9,13 @@
 
     'use strict';
 
+    var id;
+    
     function MultipleSelect($el, options) {
         var that = this,
             elWidth = $el.width();
-
+	id = $el.context.id;//id of select
+	    
         this.$el = $el.hide();
         this.options = options;
 
@@ -39,20 +42,21 @@
             }
             if (($(e.target)[0] === that.$drop[0] ||
                     $(e.target).parents('.ms-drop')[0] !== that.$drop[0]) &&
-                    that.options.isOpen) {
+                    that.options.isopen) {
                 that.close();
             }
         });
 
-        if (this.options.isOpen) {
+        if (this.options.isopen) {
             this.open();
         }
+
     }
 
     MultipleSelect.prototype = {
         constructor : MultipleSelect,
 
-        init: function() {
+        init: function(id) {
             var that = this,
                 html = [];
             if (this.options.filter) {
@@ -74,7 +78,7 @@
                 );
             }
             $.each(this.$el.children(), function(i, elm) {
-                html.push(that.optionToHtml(i, elm));
+                html.push(that.optionToHtml(id, i, elm));
             });
             html.push('<li class="ms-no-results">No matches found</li>');
             html.push('</ul>');
@@ -85,14 +89,14 @@
             this.$searchInput = this.$drop.find('.ms-search input');
             this.$selectAll = this.$drop.find('input[name="selectAll"]');
             this.$selectGroups = this.$drop.find('input[name="selectGroup"]');
-            this.$selectItems = this.$drop.find('input[name="selectItem"]:enabled');
-            this.$disableItems = this.$drop.find('input[name="selectItem"]:disabled');
+            this.$selectItems = this.$drop.find('input[name="selectItem-'+id+'"]:enabled');
+            this.$disableItems = this.$drop.find('input[name="selectItem-'+id+'"]:disabled');
             this.$noResults = this.$drop.find('.ms-no-results');
             this.events();
             this.update();
         },
 
-        optionToHtml: function(i, elm, group, groupDisabled) {
+        optionToHtml: function(id, i, elm, group, groupDisabled) {
             var that = this,
                 $elm = $(elm),
                 html = [],
@@ -109,7 +113,7 @@
                 html.push(
                     '<li' + (multiple ? ' class="multiple"' : '') + '>',
                         '<label' + (disabled ? ' class="disabled"' : '') + '>',
-                            '<input type="' + type + '" name="selectItem" value="' + value + '"' +
+                            '<input type="' + type + '" name="selectItem-'+id+'" value="' + value + '"' +
                                 (selected ? ' checked="checked"' : '') +
                                 (disabled ? ' disabled="disabled"' : '') +
                                 (group ? ' data-group="' + group + '"' : '') +
@@ -131,7 +135,7 @@
                         '</label>',
                     '</li>');
                 $.each($elm.children(), function(i, elm) {
-                    html.push(that.optionToHtml(i, elm, _group, disabled));
+                    html.push(that.optionToHtml(id, i, elm, _group, disabled));
                 });
             }
             return html.join('');
@@ -140,7 +144,8 @@
         events: function() {
             var that = this;
             this.$choice.off('click').on('click', function() {
-                that[that.options.isOpen ? 'close' : 'open']();
+                that[that.options.isopen ? 'close' : 'open']();
+				that.$searchInput.focus();
             })
                 .off('focus').on('focus', this.options.onFocus)
                 .off('blur').on('blur', this.options.onBlur);
@@ -153,9 +158,11 @@
                         break;
                 }
             });
+				
             this.$searchInput.off('keyup').on('keyup', function() {
                 that.filter();
             });
+				
             this.$selectAll.off('click').on('click', function() {
                 var checked = $(this).prop('checked'),
                     $items = that.$selectItems.filter(':visible');
@@ -198,7 +205,7 @@
             if (this.$choice.hasClass('disabled')) {
                 return;
             }
-            this.options.isOpen = true;
+            this.options.isopen = true;
             this.$choice.find('>div').addClass('open');
             this.$drop.show();
             if (this.options.container) {
@@ -214,7 +221,7 @@
         },
 
         close: function() {
-            this.options.isOpen = false;
+            this.options.isopen = false;
             this.$choice.find('>div').removeClass('open');
             this.$drop.hide();
             if (this.options.container) {
@@ -228,19 +235,19 @@
         },
 
         update: function() {
-            var selects = this.getSelects('text'),
+	    var that = this;
+            var selects = this.getSelects('text',this.$el.context.id),
                 $span = this.$choice.find('>span');
-            if (selects.length == this.$selectItems.length && this.options.allSelected) {
-                $span.removeClass('placeholder').html(this.options.allSelected);
-            } else if (selects.length > this.options.minumimCountSelected && this.options.countSelected) {
-                $span.removeClass('placeholder').html(this.options.countSelected.replace('#', selects.length).replace('%', this.$selectItems.length + this.$disableItems.length));
+            if(selects.length == this.$selectItems.length && this.options.overrideButtonText) {
+                $span.removeClass('placeholder').html(this.options.selectAllText);
             } else if (selects.length) {
                 $span.removeClass('placeholder').html(selects.join(', '));
             } else {
                 $span.addClass('placeholder').html(this.options.placeholder);
             }
             // set selects to select
-            this.$el.val(this.getSelects());
+	    
+            this.$el.val(this.getSelects('',this.$el.context.id));
         },
 
         updateSelectAll: function() {
@@ -260,11 +267,11 @@
         },
 
         //value or text, default: 'value'
-        getSelects: function(type) {
+        getSelects: function(type,id) {
             var that = this,
                 texts = [],
                 values = [];
-            this.$drop.find('input[name="selectItem"]:checked').each(function() {
+            this.$drop.find('input[name="selectItem-'+id+'"]:checked').each(function() {
                 texts.push($(this).parent().text());
                 values.push($(this).val());
             });
@@ -275,7 +282,7 @@
                     var html = [],
                         text = $.trim($(this).parent().text()),
                         group = $(this).parent().data('group'),
-                        $children = that.$drop.find('[name="selectItem"][data-group="' + group + '"]'),
+                        $children = that.$drop.find('[name="selectItem-'+id+'"][data-group="' + group + '"]'),
                         $selected = $children.filter(':checked');
 
                     if ($selected.length === 0) {
@@ -344,7 +351,7 @@
         },
 
         refresh: function() {
-            this.init();
+            this.init(this.$el.context.id);//
         },
 
         filter: function() {
@@ -408,9 +415,17 @@
                 if ($.inArray(option, allowedMethods) < 0) {
                     throw "Unknown method: " + option;
                 }
-                value = data[option](args[1]);
+		if( option == 'getSelects' ){
+		  if(args.length == 2)
+		     value = data[option](args[1],this.id);
+		  else if(args.length == 3)  
+		     value = data[option](args[1],args[2]);
+		  else   
+		     value = data[option]('value',this.id);
+		}else
+		  value = data[option](args[1]);
             } else {
-                data.init();
+                data.init(this.id);
             }
         });
 
@@ -418,13 +433,10 @@
     };
 
     $.fn.multipleSelect.defaults = {
-        isOpen: false,
+        isopen: false,
         placeholder: '',
         selectAll: true,
         selectAllText: 'Select all',
-        allSelected: 'All selected', // false or string
-        minumimCountSelected: 3, // int - 'countSelectedText' will be shown only if more than X items where selected
-        countSelected: '# of % selected', // false or string - '#' is replaced with the count of selected items, '%' is replaces with total items
         multiple: false,
         multipleWidth: 80,
         single: false,
