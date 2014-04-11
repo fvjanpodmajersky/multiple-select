@@ -4,6 +4,8 @@ Multiple select is a jQuery plugin to select multiple elements with checkboxes :
 
 To get started checkout examples and documentation at http://wenzhixin.net.cn/p/multiple-select
 
+Independent multiple selects with single(radio) input can be created in a page, which was coded by Jan Podmajersky.
+
 ## Contributors
 
 Multiple select is due to the excellent work of the following contributors:
@@ -15,6 +17,7 @@ Multiple select is due to the excellent work of the following contributors:
 <tr><th align="left">jwheadon</th><td><a href="https://github.com/jwheadon">GitHub/jwheadon</a></td></tr>
 <tr><th align="left">guli</th><td><a href="https://github.com/guli">GitHub/guli</a></td></tr>
 <tr><th align="left">Tobias Macey</th><td><a href="https://github.com/blarghmatey">GitHub/blarghmatey</a></td></tr>
+<tr><th align="left">Jan Podmajersky</th><td><a href="https://github.com/fvjanpodmajersky">GitHub/fvjanpodmajersky</a></td></tr>
 </tbody>
 </table>
 
